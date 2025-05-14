@@ -1,0 +1,10 @@
+{
+    "tabWidth": 4,
+    "printWidth": 140,
+    "semi": false,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "jsxBracketSameLine": true,
+    "plugins": ["prettier-plugin-tailwindcss"],
+    "tailwindConfig": "./tailwind.config.ts"
+}

@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .text-welcome {
+        @apply text-welcome-sm md:text-welcome-md lg:text-welcome-lg;
+    }
+    .text-display {
+        @apply text-display-sm md:text-display-md lg:text-display-lg;
+    }
+    .text-headline {
+        @apply text-headline-sm md:text-headline-md lg:text-headline-lg;
+    }
+    .text-title {
+        @apply text-title-sm md:text-title-md lg:text-title-lg;
+    }
+    .text-label {
+        @apply text-label-sm md:text-label-md lg:text-label-lg;
+    }
+    .text-body {
+        @apply text-body-sm md:text-body-md lg:text-body-lg;
+    }
+    .btn {
+        @apply hover:opacity-hover cursor-pointer;
+    }
+    .btn-primary {
+        @apply btn bg-gradient-to-b from-primary to-secondary rounded-button px-12 py-1;
+    }
+}
+
+:root {
+    --foreground-rgb: 0, 0, 0;
+    --background-start-rgb: 214, 219, 220;
+    --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --foreground-rgb: 255, 255, 255;
+        --background-start-rgb: 0, 0, 0;
+        --background-end-rgb: 0, 0, 0;
+    }
+}
+
+html {
+    color: rgb(var(--foreground-rgb));
+    background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+    -ms-overflow-style: none;  /* Remove scrollbar in Internet Explorer 10+ */
+    scrollbar-width: none;  /* Remove scrollbar in Firefox */
+}
+
+html::-webkit-scrollbar {
+    display: 'none'; /* Remove scrollbar in Safari and Chrome */
+    width: 0; /* Remove scrollbar in Safari and Chrome */
+}
