@@ -2,10 +2,15 @@ import React, { useState } from 'react'
 import Tesseract from 'tesseract.js'
 
 const regions = [
-    { name: 'top', left: 260, top: 460, width: 210, height: 200 },
-    { name: 'left', left: 20, top: 750, width: 210, height: 200 },
-    { name: 'right', left: 510, top: 750, width: 210, height: 200 },
-    { name: 'bottom', left: 260, top: 1030, width: 210, height: 200 },
+    {
+        section: 'top',
+        name: { left: 260, top: 460, width: 210, height: 60 },
+        score: { left: 260, top: 520, width: 210, height: 140 },
+    },
+
+    // { name: 'left', left: 20, top: 750, width: 210, height: 200 },
+    // { name: 'right', left: 510, top: 750, width: 210, height: 200 },
+    // { name: 'bottom', left: 260, top: 1030, width: 210, height: 200 },
 ]
 
 export const OcrReader: React.FC = () => {
@@ -38,12 +43,6 @@ export const OcrReader: React.FC = () => {
                 canvas.height = img.height
                 ctx.drawImage(img, 0, 0)
 
-                ctx.strokeStyle = 'red'
-                ctx.lineWidth = 3
-                regions.forEach((region) => {
-                    ctx.strokeRect(region.left, region.top, region.width, region.height)
-                })
-
                 const imageDataUrl = canvas.toDataURL('image/png')
                 setImageUrl(imageDataUrl)
 
@@ -61,51 +60,64 @@ export const OcrReader: React.FC = () => {
                         const parsedResults: { name: string; score: number }[] = []
 
                         for (const region of regions) {
-                            const regionCanvas = document.createElement('canvas')
-                            regionCanvas.width = region.width
-                            regionCanvas.height = region.height
+                            const { section, name, score } = region
+                            const nameCanvas = document.createElement('canvas')
+                            nameCanvas.width = name.width
+                            nameCanvas.height = name.height
 
-                            const regionCtx = regionCanvas.getContext('2d')
-                            if (!regionCtx) continue
+                            const nameRegionCtx = nameCanvas.getContext('2d')
+                            if (!nameRegionCtx) continue
 
-                            regionCtx.drawImage(
-                                img,
-                                region.left,
-                                region.top,
-                                region.width,
-                                region.height,
-                                0,
-                                0,
-                                region.width,
-                                region.height
-                            )
+                            nameRegionCtx.drawImage(img, name.left, name.top, name.width, name.height, 0, 0, name.width, name.height)
 
                             // Grayscale preprocessing
-                            const imageData = regionCtx.getImageData(0, 0, region.width, region.height)
+                            const imageData = nameRegionCtx.getImageData(0, 0, name.width, name.height)
                             for (let i = 0; i < imageData.data.length; i += 4) {
                                 const avg = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3
                                 imageData.data[i] = avg
                                 imageData.data[i + 1] = avg
                                 imageData.data[i + 2] = avg
                             }
-                            regionCtx.putImageData(imageData, 0, 0)
+                            nameRegionCtx.putImageData(imageData, 0, 0)
 
-                            setCroppedImageUrl((prev) => [...(prev || []), regionCanvas.toDataURL('image/png')])
+                            setCroppedImageUrl((prev) => [...(prev || []), nameCanvas.toDataURL('image/png')])
 
-                            const blob = await new Promise<Blob | null>((resolve) => regionCanvas.toBlob(resolve, 'image/png'))
+                            const blob = await new Promise<Blob | null>((resolve) => nameCanvas.toBlob(resolve, 'image/png'))
 
                             if (!blob) continue
 
                             const {
-                                data: { text: regionText },
+                                data: { text: nameText },
                             } = await worker.recognize(blob)
 
-                            console.log(`${region.name} region OCR text:`, regionText)
-
-                            const match = regionText.match(/([a-zA-Z]{2,})\s*([\-]?\d+\.\d+)/)
-                            if (match) {
-                                parsedResults.push({ name: match[1], score: parseFloat(match[2]) })
+                            const scoreCanvas = document.createElement('canvas')
+                            scoreCanvas.width = score.width
+                            scoreCanvas.height = score.height
+                            const scoreRegionCtx = scoreCanvas.getContext('2d')
+                            if (!scoreRegionCtx) continue
+                            scoreRegionCtx.drawImage(img, score.left, score.top, score.width, score.height, 0, 0, score.width, score.height)
+                            const scoreImageData = scoreRegionCtx.getImageData(0, 0, score.width, score.height)
+                            for (let i = 0; i < scoreImageData.data.length; i += 4) {
+                                const avg = (scoreImageData.data[i] + scoreImageData.data[i + 1] + scoreImageData.data[i + 2]) / 3
+                                scoreImageData.data[i] = avg
+                                scoreImageData.data[i + 1] = avg
+                                scoreImageData.data[i + 2] = avg
                             }
+                            scoreRegionCtx.putImageData(scoreImageData, 0, 0)
+
+                            setCroppedImageUrl((prev) => [...(prev || []), scoreCanvas.toDataURL('image/png')])
+
+                            const scoreBlob = await new Promise<Blob | null>((resolve) => scoreCanvas.toBlob(resolve, 'image/png'))
+                            if (!scoreBlob) continue
+                            const {
+                                data: { text: scoreText },
+                            } = await worker.recognize(scoreBlob)
+
+                            console.log(`${region.section} name:`, nameText)
+
+                            console.log(`${region.section} score:`, scoreText)
+
+                            parsedResults.push({ name: nameText, score: parseFloat(scoreText) })
                         }
 
                         setResults(parsedResults)
