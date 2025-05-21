@@ -35,6 +35,11 @@ interface PlayerProps {
     score_image: string[]
 }
 
+export interface OcrReaderProps {
+    conversionRate?: number
+    currency?: string
+}
+
 export const OcrReader: React.FC = () => {
     const [loading, setLoading] = useState(false)
     const [players, setPlayers] = useState<PlayerProps[]>([])
