@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import Tesseract, { OEM, PSM } from 'tesseract.js'
+import { WinningText } from '.'
 
+// Pre-determined region for cropping the image
 const regions = [
     {
         section: 'top',
@@ -17,21 +19,25 @@ const regions = [
     },
 ]
 
+// The conversion rate for the score
 const conversionRate = 1 / 60
 
+// The minimum confidence level & the maximum number of retries for OCR recognition.
 const minConfidence = 85
 const maxRetries = 10
 
+// The threshold value for sharpening the image. (0 - black, 255 - white)
+const threshold = 180
+
+interface PlayerProps {
+    name: string
+    score: number
+    score_image: string[]
+}
+
 export const OcrReader: React.FC = () => {
     const [loading, setLoading] = useState(false)
-    const [results, setResults] = useState<{ name: string; score: number }[]>([])
-    const [croppedImageUrls, setCroppedImageUrls] = useState<
-        {
-            name: string
-            score: string
-        }[]
-    >([])
-
+    const [players, setPlayers] = useState<PlayerProps[]>([])
     const [images, setImages] = useState<File[]>([])
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,19 +51,25 @@ export const OcrReader: React.FC = () => {
 
     const recognizeTextFromAllImages = async () => {
         setLoading(true)
-        setCroppedImageUrls([])
-        let allResults: { name: string; score: number }[] = []
+        setPlayers([])
+
+        let allResults: PlayerProps[] = []
 
         for (const file of images) {
             const result = await recognizeText(file)
             allResults = [...allResults, ...result]
         }
 
-        setResults(allResults)
+        setPlayers(allResults)
         setLoading(false)
     }
 
-    const recognizeText = async (file: File): Promise<{ name: string; score: number }[]> => {
+    const clearAll = () => {
+        setImages([])
+        setPlayers([])
+    }
+
+    const recognizeText = async (file: File): Promise<PlayerProps[]> => {
         return new Promise((resolve) => {
             const img = new Image()
             const reader = new FileReader()
@@ -73,7 +85,7 @@ export const OcrReader: React.FC = () => {
                     ctx.drawImage(img, 0, 0)
 
                     const worker = await Tesseract.createWorker('eng', OEM.DEFAULT)
-                    const parsedResults: { name: string; score: number }[] = []
+                    const parsedResults: PlayerProps[] = []
 
                     try {
                         for (const region of regions) {
@@ -109,9 +121,10 @@ export const OcrReader: React.FC = () => {
                                 const imageData = regionCtx.getImageData(0, 0, regionBox.width, regionBox.height)
                                 for (let i = 0; i < imageData.data.length; i += 4) {
                                     const avg = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3
-                                    imageData.data[i] = avg
-                                    imageData.data[i + 1] = avg
-                                    imageData.data[i + 2] = avg
+                                    const value = avg < threshold ? 0 : 255
+                                    imageData.data[i] = value
+                                    imageData.data[i + 1] = value
+                                    imageData.data[i + 2] = value
                                 }
                                 regionCtx.putImageData(imageData, 0, 0)
 
@@ -160,21 +173,45 @@ export const OcrReader: React.FC = () => {
                                 return { text, url }
                             }
 
-                            const { text: nameText, url: nameUrl } = await extractTextFromRegion(name, false)
+                            const { text: nameText } = await extractTextFromRegion(name, false)
                             const { text: scoreText, url: scoreUrl } = await extractTextFromRegion(score, true)
 
-                            setCroppedImageUrls((prev) => [
-                                ...prev,
-                                {
-                                    name: nameUrl,
-                                    score: scoreUrl,
-                                },
-                            ])
+                            // Make it that it finds the person with the same name and append the scoreUrl(image link to the array)
+                            const existingIndex = players.findIndex((player) => player.name === nameText)
+                            if (existingIndex !== -1) {
+                                const existingPlayer = players[existingIndex]
+                                const updatedPlayer = {
+                                    ...existingPlayer,
+                                    score: existingPlayer.score + parseFloat(scoreText),
+                                    score_image: [...existingPlayer.score_image, scoreUrl],
+                                }
+
+                                setPlayers((prev) => {
+                                    const updated = [...prev]
+                                    updated[existingIndex] = updatedPlayer
+                                    return updated
+                                })
+                            } else {
+                                setPlayers((prev) => [
+                                    ...prev,
+                                    {
+                                        name: nameText,
+                                        score: parseFloat(scoreText),
+                                        score_image: [scoreUrl],
+                                    },
+                                ])
+                            }
+
+                            console.log(players)
 
                             const parsedScore = parseFloat(scoreText)
 
                             if (nameText && !isNaN(parsedScore)) {
-                                parsedResults.push({ name: nameText.trim(), score: parsedScore })
+                                parsedResults.push({
+                                    name: nameText.trim(),
+                                    score: parsedScore,
+                                    score_image: [scoreUrl],
+                                })
                             }
                         }
                     } catch (error) {
@@ -192,13 +229,13 @@ export const OcrReader: React.FC = () => {
         })
     }
 
-    const groupedResults = results.reduce<Record<string, number>>((acc, { name, score }) => {
+    const groupedResults = players.reduce<Record<string, number>>((acc, { name, score }) => {
         const cleanName = name.trim().toLowerCase()
         acc[cleanName] = (acc[cleanName] || 0) + score
         return acc
     }, {})
 
-    const totalScore = Object.values(groupedResults).reduce((sum, s) => sum + s, 0)
+    const totalScore = Object.values(groupedResults).reduce((sum: number, s: number) => sum + s, 0)
 
     return (
         <div style={{ padding: '1rem' }}>
@@ -206,6 +243,10 @@ export const OcrReader: React.FC = () => {
             <input type="file" accept="image/*" multiple onChange={handleImageUpload} />
             <button onClick={recognizeTextFromAllImages} disabled={loading || images.length === 0}>
                 Calculate
+            </button>
+
+            <button onClick={clearAll} disabled={images.length === 0 && players.length === 0}>
+                Clear All
             </button>
             {loading && <p>Processing images...</p>}
 
@@ -227,15 +268,72 @@ export const OcrReader: React.FC = () => {
                 </div>
             )}
 
-            {croppedImageUrls.length > 0 && (
+            {players.length > 0 && (
                 <div className="flex flex-col">
-                    <h3>Cropped Regions:</h3>
-                    {/* Show the name and their score on a column */}
-                    <div className="flex flex-wrap">
-                        {croppedImageUrls.map((url, index) => (
-                            <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <img src={url.name} alt={`Cropped region ${index}`} style={{ maxWidth: '100%', marginBottom: '10px' }} />
-                                <img src={url.score} alt={`Cropped region ${index}`} style={{ maxWidth: '100%', marginBottom: '10px' }} />
+                    <h3>Player Scores:</h3>
+                    <div className="flex gap-4">
+                        {Object.entries(
+                            players.reduce<Record<string, { scores: number[]; images: string[] }>>((acc, player) => {
+                                const key = player.name.trim()
+                                if (!acc[key]) {
+                                    acc[key] = { scores: [], images: [] }
+                                }
+                                acc[key].scores.push(player.score)
+                                acc[key].images.push(...player.score_image)
+                                return acc
+                            }, {})
+                        ).map(([name, { scores, images }], index) => (
+                            <div
+                                key={index}
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-start',
+                                    margin: '16px 0',
+                                    padding: '16px',
+                                    border: '1px solid #ddd',
+                                    borderRadius: '8px',
+                                    background: '#2a2a2a',
+                                    maxWidth: 320,
+                                }}>
+                                <span
+                                    style={{
+                                        fontWeight: 'bold',
+                                        fontSize: '1.1rem',
+                                        marginBottom: 8,
+                                        textTransform: 'capitalize',
+                                    }}>
+                                    {name}
+                                </span>
+
+                                <span>
+                                    Total Score:
+                                    <WinningText score={scores.reduce((sum, score) => sum + score, 0)} />
+                                </span>
+                                <span>
+                                    Converted:
+                                    <WinningText score={scores.reduce((sum, score) => sum + score, 0) * conversionRate} />
+                                </span>
+
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                                    {scores.map((score, i) => (
+                                        <div key={i} className="relative flex flex-col items-center gap-1">
+                                            <WinningText score={score} />
+
+                                            <img
+                                                src={images[i]}
+                                                alt={`Score image ${i}`}
+                                                style={{
+                                                    maxWidth: 80,
+                                                    maxHeight: 80,
+                                                    border: '1px solid #eee',
+                                                    borderRadius: 4,
+                                                    background: '#fff',
+                                                }}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -244,15 +342,6 @@ export const OcrReader: React.FC = () => {
 
             {Object.keys(groupedResults).length > 0 && (
                 <>
-                    <h3>Final Results (Raw):</h3>
-                    <ul>
-                        {Object.entries(groupedResults).map(([name, score], i) => (
-                            <li key={i}>
-                                {name}: {score.toFixed(4)}
-                            </li>
-                        ))}
-                    </ul>
-
                     <h3>Final Results (Converted):</h3>
                     <ul>
                         {Object.entries(groupedResults).map(([name, score], i) => (
