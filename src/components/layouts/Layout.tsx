@@ -7,7 +7,7 @@ export interface PageLayoutProps {
 }
 
 export const PageLayout: FC<PageLayoutProps> = ({ children }) => {
-    const SITE_TITLE = 'Next.js Boilerplate'
+    const SITE_TITLE = 'Mahjong Score Settler'
 
     return (
         <>
