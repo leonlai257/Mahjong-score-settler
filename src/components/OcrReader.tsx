@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { use, useMemo, useState } from 'react'
 import { WinningText } from '.'
 import { useOcrReader } from '@src/lib/hooks/useOcrReader'
 import { Button } from './ui/button'
@@ -39,13 +39,12 @@ export const OcrReader: React.FC = ({ defaultRate = 60, defaultCurrency = 'CAD' 
         setImages((prev) => prev.filter((_, i) => i !== index))
     }
 
-    const groupedResults = players.reduce<Record<string, number>>((acc, { name, score }) => {
-        const cleanName = name.trim().toLowerCase()
-        acc[cleanName] = (acc[cleanName] || 0) + score
-        return acc
-    }, {})
-
-    const totalScore = Object.values(groupedResults).reduce((sum: number, s: number) => sum + s, 0)
+    const totalScore = useMemo(() => {
+        return players.reduce((sum, player) => {
+            if (!player || typeof player.score !== 'number') return sum
+            return sum + player.score
+        }, 0)
+    }, [players])
 
     const progressValue = useMemo(() => {
         return (players.map((player) => player.score_image.length).reduce((sum, count) => sum + count, 0) / (images.length * 4)) * 100
@@ -66,6 +65,9 @@ export const OcrReader: React.FC = ({ defaultRate = 60, defaultCurrency = 'CAD' 
             </div>
 
             {loading && <Progress value={progressValue} />}
+
+            <h4>Combined Score: {totalScore.toFixed(0)}</h4>
+            <h4>Score Audit: {totalScore.toFixed(0) === '0' ? 'Correct' : 'Incorrect'}</h4>
 
             <div className="w-full">
                 <Label>
@@ -174,22 +176,6 @@ export const OcrReader: React.FC = ({ defaultRate = 60, defaultCurrency = 'CAD' 
                         ))}
                     </div>
                 </div>
-            )}
-
-            {Object.keys(groupedResults).length > 0 && (
-                <>
-                    <h3>Final Results (Converted):</h3>
-                    <ul>
-                        {Object.entries(groupedResults).map(([name, score], i) => (
-                            <li key={i}>
-                                {name}: {(score * (1 / conversionRate)).toFixed(4)}
-                            </li>
-                        ))}
-                    </ul>
-
-                    <h4>Combined Score: {totalScore.toFixed(0)}</h4>
-                    <h4>Score Audit: {totalScore.toFixed(0) === '0' ? 'Correct' : 'Incorrect'}</h4>
-                </>
             )}
         </div>
     )
