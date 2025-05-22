@@ -7,6 +7,7 @@ import { Card } from './ui/card'
 import { Label } from './ui/label'
 import { Progress } from './ui/progress'
 import { count } from 'console'
+import { Cross1Icon } from '@radix-ui/react-icons'
 
 // The minimum confidence level & the maximum number of retries for OCR recognition.
 const minConfidence = 85
@@ -90,22 +91,67 @@ export const OcrReader: React.FC = ({ defaultRate = 60, defaultCurrency = 'CAD' 
                     />
                 </Label>
             </div>
+            <div>
+                <Label>Images Uploaded: {images.length}</Label>
+            </div>
 
             {images.length > 0 && (
-                <div>
+                <div className="flex flex-col gap-4">
                     <Label>Uploaded Images:</Label>
-                    {images.map((file, index) => (
-                        <div key={index} style={{ position: 'relative', display: 'inline-block', margin: 10 }}>
-                            <img
-                                src={URL.createObjectURL(file)}
-                                alt={`Uploaded ${index}`}
-                                style={{ maxWidth: 200, maxHeight: 200, display: 'block' }}
-                            />
-                            <button onClick={() => removeImage(index)} style={{ position: 'absolute', top: 0, right: 0 }}>
-                                x
-                            </button>
-                        </div>
-                    ))}
+                    <div className="flex gap-4">
+                        {images.map((file, index) => (
+                            <Card key={index} className="relative flex flex-col items-center ">
+                                <div
+                                    style={{
+                                        position: 'relative',
+                                        cursor: 'pointer',
+                                        display: 'inline-block',
+                                    }}
+                                    onClick={() => removeImage(index)}
+                                    title="Click to remove"
+                                    className="group">
+                                    <img
+                                        src={URL.createObjectURL(file)}
+                                        alt={`Uploaded ${index}`}
+                                        style={{
+                                            maxWidth: 200,
+                                            maxHeight: 400,
+                                            display: 'block',
+                                            transition: 'box-shadow 0.2s, opacity 0.2s, filter 0.2s, border-color 0.2s',
+                                        }}
+                                        className="border-2 border-[#7171f8] hover:border-[#f87171] group-hover:scale-[1.03] group-hover:opacity-100 group-hover:shadow-lg group-hover:brightness-105 group-hover:filter group-hover:[filter:saturate(1.1)_drop-shadow(0_0_8px_rgba(239,68,68,0.8))_sepia(0.2)_hue-rotate(-10deg)]"
+                                    />
+                                    <div className="group absolute inset-0 flex items-center justify-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImage(index)}
+                                            title="Remove image"
+                                            className="absolute flex items-center justify-center rounded-full border border-red-500 bg-white bg-opacity-80 p-1 transition-all duration-150 hover:bg-red-100"
+                                            style={{
+                                                left: '50%',
+                                                top: '50%',
+                                                transform: 'translate(-50%, -50%)',
+                                                zIndex: 2,
+                                                width: 32,
+                                                height: 32,
+                                                display: 'none',
+                                            }}
+                                            // Show button only on hover
+                                            tabIndex={-1}>
+                                            <Cross1Icon color="#ef4444" width={18} height={18} />
+                                        </button>
+                                        <style>
+                                            {`
+                                                .group:hover button[type="button"][title="Remove image"] {
+                                                    display: flex !important;
+                                                }
+                                            `}
+                                        </style>
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
                 </div>
             )}
 
