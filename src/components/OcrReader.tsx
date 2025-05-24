@@ -53,44 +53,52 @@ export const OcrReader: React.FC = ({ defaultRate = 60, defaultCurrency = 'CAD' 
 
     return (
         <div className="flex w-full flex-col gap-4 p-4">
-            <Label>OCR Score Reader</Label>
+            <Card className="flex flex-col gap-2 bg-transparent p-4">
+                <Label className="text-display">OCR Score Reader</Label>
 
-            <div className="flex gap-2">
-                <Input className="w-fit" type="file" accept="image/*" multiple onChange={handleImageUpload} />
+                <div className="flex gap-2">
+                    <Input className="w-fit" type="file" accept="image/*" multiple onChange={handleImageUpload} />
 
-                <Button onClick={recognizeTextFromAllImages} disabled={loading || images.length === 0}>
-                    Calculate
-                </Button>
+                    <Button onClick={recognizeTextFromAllImages} disabled={loading || images.length === 0}>
+                        Calculate
+                    </Button>
 
-                <Button onClick={clearAll}>Clear All</Button>
-            </div>
+                    <Button onClick={clearAll}>Clear All</Button>
+                </div>
 
-            {loading && <Progress value={progressValue} />}
+                {loading && <Progress value={progressValue} />}
 
-            <h4>Combined Score: {totalScore.toFixed(0)}</h4>
-            <h4>Score Audit: {totalScore.toFixed(0) === '0' ? 'Correct' : 'Incorrect'}</h4>
+                <h4>Combined Score: {totalScore.toFixed(0)}</h4>
+                <h4>Score Audit: {totalScore.toFixed(0) === '0' ? 'Correct' : 'Incorrect'}</h4>
+            </Card>
 
-            <div className="w-full">
+            <Card className="flex flex-col gap-4 bg-transparent p-4">
+                <Label>Settings</Label>
+                <div className="flex gap-4">
+                    <Card className="flex items-center gap-2 p-4">
+                        <Label>Conversion Rate (denominator):</Label>
+                        <Input
+                            type="number"
+                            min={0}
+                            value={conversionRate}
+                            onChange={(e) => setConversionRate(parseFloat(e.target.value))}
+                            style={{ marginLeft: '8px', width: '80px' }}
+                        />
+                    </Card>
+                    <Card className="flex items-center gap-2 p-4">
+                        <Label>Currency:</Label>
+                        <Input
+                            type="text"
+                            value={currency}
+                            onChange={(e) => setCurrency(e.target.value)}
+                            style={{ marginLeft: '8px', width: '80px' }}
+                        />
+                    </Card>
+                </div>
                 <Label>
-                    Conversion Rate (denominator):
-                    <Input
-                        type="number"
-                        min={0}
-                        value={conversionRate}
-                        onChange={(e) => setConversionRate(parseFloat(e.target.value))}
-                        style={{ marginLeft: '8px', width: '80px' }}
-                    />
+                    Example: 1000 = {(1000 * (1 / conversionRate)).toFixed(2)} {currency}
                 </Label>
-                <Label>
-                    Currency:
-                    <Input
-                        type="text"
-                        value={currency}
-                        onChange={(e) => setCurrency(e.target.value)}
-                        style={{ marginLeft: '8px', width: '80px' }}
-                    />
-                </Label>
-            </div>
+            </Card>
             <div>
                 <Label>Images Uploaded: {images.length}</Label>
             </div>
