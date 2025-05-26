@@ -48,6 +48,7 @@ export const useOcrReader = ({ threshold = 180, maxRetries = 10, minConfidence =
 
     const removeImage = (index: number) => {
         setImages((prev) => prev.filter((_, i) => i !== index))
+        setPlayers([])
     }
 
     const recognizeTextFromAllImages = async () => {

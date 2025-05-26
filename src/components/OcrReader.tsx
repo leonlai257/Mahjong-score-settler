@@ -1,13 +1,12 @@
-import React, { useMemo, useRef, useState } from 'react'
-import { WinningText } from '.'
+import { CheckCircledIcon, Cross1Icon } from '@radix-ui/react-icons'
 import { useOcrReader } from '@src/lib/hooks/useOcrReader'
+import React, { useMemo, useState } from 'react'
+import { WinningText } from '.'
 import { Button } from './ui/button'
-import { Input } from './ui/input'
 import { Card } from './ui/card'
+import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Progress } from './ui/progress'
-import { count } from 'console'
-import { Cross1Icon } from '@radix-ui/react-icons'
 
 // The minimum confidence level & the maximum number of retries for OCR recognition.
 const minConfidence = 85
@@ -59,8 +58,12 @@ export const OcrReader: React.FC = ({ defaultRate = 60, defaultCurrency = 'CAD' 
 
                 {loading && <Progress value={progressValue} />}
 
-                <h4>Combined Score: {totalScore.toFixed(0)}</h4>
-                <h4>Score Audit: {totalScore.toFixed(0) === '0' ? 'Correct' : 'Incorrect'}</h4>
+                <div className="flex items-center gap-1">
+                    <h4>Combined Score: {totalScore.toFixed(0)}</h4>
+                    {images && images.length > 0 && progressValue >= 100 && totalScore.toFixed(0) === '0' && (
+                        <CheckCircledIcon width={20} height={20} className="text-primary" />
+                    )}
+                </div>
             </Card>
 
             <Card className="flex flex-col gap-4 bg-transparent p-4">
