@@ -60,7 +60,7 @@ export const OcrReader: React.FC = ({ defaultRate = 60, defaultCurrency = 'CAD' 
 
                 <div className="flex items-center gap-1">
                     <h4>Combined Score: {totalScore.toFixed(0)}</h4>
-                    {images && images.length > 0 && progressValue >= 100 && totalScore.toFixed(0) === '0' && (
+                    {images && images.length > 0 && progressValue >= 100 && Math.abs(totalScore).toFixed(0) === '0' && (
                         <CheckCircledIcon width={20} height={20} className="text-primary" />
                     )}
                 </div>
@@ -70,14 +70,17 @@ export const OcrReader: React.FC = ({ defaultRate = 60, defaultCurrency = 'CAD' 
                 <Label>Settings</Label>
                 <div className="flex gap-4">
                     <Card className="flex items-center gap-2 p-4">
-                        <Label>Conversion Rate (denominator):</Label>
-                        <Input
-                            type="number"
-                            min={0}
-                            value={conversionRate}
-                            onChange={(e) => setConversionRate(parseFloat(e.target.value))}
-                            style={{ marginLeft: '8px', width: '80px' }}
-                        />
+                        <Label>Conversion Rate: </Label>
+                        <div className="flex items-center">
+                            1 /
+                            <Input
+                                type="number"
+                                min={0}
+                                value={conversionRate}
+                                onChange={(e) => setConversionRate(parseFloat(e.target.value))}
+                                style={{ marginLeft: '8px', width: '80px' }}
+                            />
+                        </div>
                     </Card>
                     <Card className="flex items-center gap-2 p-4">
                         <Label>Currency:</Label>
