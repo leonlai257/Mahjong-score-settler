@@ -1,4 +1,4 @@
-import React, { use, useMemo, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { WinningText } from '.'
 import { useOcrReader } from '@src/lib/hooks/useOcrReader'
 import { Button } from './ui/button'
@@ -31,9 +31,19 @@ export const OcrReader: React.FC = ({ defaultRate = 60, defaultCurrency = 'CAD' 
         minConfidence,
     })
 
+    // Use a ref to reset the file input value after each upload
+    const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+    // To force the input to re-render and allow uploading the same file(s) again
+    const [inputKey, setInputKey] = useState(0)
+
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
+        if (e.target.files && e.target.files.length > 0) {
             setImages((prev) => [...prev, ...Array.from(e.target.files!)])
+            // Reset the input value so the same file can be selected again
+            e.target.value = ''
+            // Force re-render of input to ensure onChange fires for same file(s)
+            setInputKey((k) => k + 1)
         }
     }
     const removeImage = (index: number) => {
@@ -57,7 +67,15 @@ export const OcrReader: React.FC = ({ defaultRate = 60, defaultCurrency = 'CAD' 
                 <Label className="text-display">OCR Score Reader</Label>
 
                 <div className="flex gap-2">
-                    <Input className="w-fit" type="file" accept="image/*" multiple onChange={handleImageUpload} />
+                    <Input
+                        key={inputKey}
+                        className="w-fit"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageUpload}
+                        ref={fileInputRef}
+                    />
 
                     <Button onClick={recognizeTextFromAllImages} disabled={loading || images.length === 0}>
                         Calculate
