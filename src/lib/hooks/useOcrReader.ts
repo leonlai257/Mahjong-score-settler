@@ -40,6 +40,16 @@ export const useOcrReader = ({ threshold = 180, maxRetries = 10, minConfidence =
         setPlayers([])
     }
 
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setImages((prev) => [...prev, ...Array.from(e.target.files!)])
+        }
+    }
+
+    const removeImage = (index: number) => {
+        setImages((prev) => prev.filter((_, i) => i !== index))
+    }
+
     const recognizeTextFromAllImages = async () => {
         setLoading(true)
         setPlayers([])
@@ -220,6 +230,8 @@ export const useOcrReader = ({ threshold = 180, maxRetries = 10, minConfidence =
         players,
         images,
         setImages,
+        removeImage,
+        handleImageUpload,
         clearAll,
         recognizeTextFromAllImages,
     }
